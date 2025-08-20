@@ -4,17 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Form Order Kerja - PT. DAGSAP ENDURA EATORE</title>
-    <!-- External Scripts for PDF Export -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-
         body {
             font-family: Arial, sans-serif;
             margin: 20px;
@@ -134,25 +129,21 @@
             margin: 5px auto;
             display: block;
         }
-
         .info-section {
             background-color: #f8f9fa;
             padding: 15px;
             border-radius: 5px;
             margin-bottom: 20px;
         }
-
         .info-section h4 {
             color: #495057;
             margin-bottom: 10px;
         }
-
         .buttons {
             text-align: center;
             margin: 20px 0;
             gap: 10px;
         }
-
         .btn {
             background-color: #007bff;
             color: white;
@@ -163,24 +154,19 @@
             font-size: 14px;
             margin: 0 5px;
         }
-
         .btn:hover {
             background-color: #0056b3;
         }
-
+        .btn-success {
+            background-color: #28a745;
+        }
+        .btn-success:hover {
+            background-color: #1e7e34;
+        }
         .btn:disabled {
             background-color: #6c757d;
             cursor: not-allowed;
         }
-
-        .btn-success {
-            background-color: #28a745;
-        }
-
-        .btn-success:hover:not(:disabled) {
-            background-color: #1e7e34;
-        }
-
         .image-container {
             position: relative;
             width: 400px;
@@ -191,14 +177,12 @@
             overflow: hidden;
             background-color: #f8f9fa;
         }
-
         .dynamic-image {
             width: 100%;
             height: 100%;
             object-fit: contain;
             display: block;
         }
-
         .image-placeholder {
             position: absolute;
             top: 50%;
@@ -210,11 +194,9 @@
             font-size: 14px;
             pointer-events: none;
         }
-
         .image-container.has-image .image-placeholder {
             display: none;
         }
-
         .image-container.loading::after {
             content: "Memuat gambar...";
             position: absolute;
@@ -224,7 +206,6 @@
             color: #007bff;
             font-size: 14px;
         }
-
         .bg-image-container {
             width: 400px;
             height: 300px;
@@ -238,11 +219,9 @@
             position: relative;
             display: none;
         }
-
         .bg-image-container.has-bg-image {
             display: block;
         }
-
         .bg-image-container .image-placeholder {
             position: absolute;
             top: 50%;
@@ -253,33 +232,27 @@
             text-align: center;
             font-size: 14px;
         }
-
         .attr-display::after {
             content: attr(data-value);
         }
-
         .status-completed::after { color: #28a745; font-weight: bold; }
         .status-in-progress::after { color: #ffc107; font-weight: bold; }
         .status-pending::after { color: #dc3545; font-weight: bold; }
-
         .checkbox-container {
             display: flex;
             align-items: center;
             gap: 10px;
         }
-
         .dynamic-checkbox {
             width: 18px;
             height: 18px;
             accent-color: #4CAF50;
         }
-
         .checkbox-label {
             cursor: pointer;
             font-weight: normal;
             flex: 1;
         }
-
         .param-code {
             background-color: #f8f9fa;
             padding: 8px;
@@ -289,43 +262,6 @@
             margin: 5px 0;
             word-break: break-all;
         }
-
-        /* Loading overlay for PDF export */
-        .loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
-        }
-
-        .loading-content {
-            background-color: white;
-            padding: 20px;
-            border-radius: 8px;
-            text-align: center;
-        }
-
-        .loading-spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #007bff;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 10px auto;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
         @media print {
             body {
                 background-color: white;
@@ -338,7 +274,7 @@
                 margin: 0;
                 padding: 0;
             }
-            .buttons, .info-section, .loading-overlay {
+            .buttons, .info-section {
                 display: none;
             }
             
@@ -358,14 +294,6 @@
     </style>
 </head>
 <body>
-    <!-- Loading Overlay -->
-    <div id="loadingOverlay" class="loading-overlay">
-        <div class="loading-content">
-            <div class="loading-spinner"></div>
-            <div>Menggenerate PDF...</div>
-        </div>
-    </div>
-
     <div class="container">
         <!-- Form Preview - Halaman 1 -->
         <div id="printArea">
@@ -489,7 +417,6 @@
                     </tr>
                 </tbody>
             </table>
-
             <table class="footer-table">
                 <tbody>
                     <tr>
@@ -525,7 +452,6 @@
                     </tr>
                 </tbody>
             </table>
-
             <!-- Halaman 2: Gambar 1 dan 2 -->
             <div class="page-break">
                 <div class="table-title">Foto Rincian Pekerjaan - Halaman 2</div>
@@ -560,7 +486,6 @@
                     </tbody>
                 </table>
             </div>
-
             <!-- Halaman 3: Gambar 3 dan 4 -->
             <div class="page-break">
                 <div class="table-title">Foto Rincian Pekerjaan - Halaman 3</div>
@@ -596,14 +521,17 @@
                 </table>
             </div>
         </div>
-
         <!-- Buttons -->
         <div class="buttons">
             <button class="btn" onclick="window.print()">Print Form</button>
-            <button class="btn btn-success" id="exportPdfBtn" onclick="exportToPDF()">Export PDF</button>
+            <button class="btn btn-success" onclick="exportToPDF()" id="pdfBtn">Export PDF</button>
         </div>
     </div>
-
+    
+    <!-- jsPDF Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
     <script>
         (function() {
             const urlParams = new URLSearchParams(window.location.search);
@@ -641,7 +569,6 @@
                 'name4': urlParams.get('name4') || '',
                 'name5': urlParams.get('name5') || ''
             };
-
             // Function to handle checkbox state
             function setupCheckbox(checkboxId, paramValue) {
                 const checkbox = document.getElementById(checkboxId);
@@ -650,12 +577,10 @@
                     checkbox.checked = isChecked;
                 }
             }
-
             // Setup all checkboxes
             setupCheckbox('check1', params.check1);
             setupCheckbox('check2', params.check2);
             setupCheckbox('check3', params.check3);
-
             // Function to setup QR code with signature data
             function setupQRCode(qrId, signatureData) {
                 const qrElement = document.getElementById(qrId);
@@ -691,7 +616,6 @@
                     }
                 }
             }
-
             // Function to setup name display with priority: name parameter > sig parameter
             function setupNameDisplay(nameId, nameParam, sigParam) {
                 const nameElement = document.getElementById(nameId);
@@ -723,21 +647,18 @@
                     nameElement.innerHTML = displayText;
                 }
             }
-
             // Setup all QR codes
             setupQRCode('qr1', params.sig1 || params.name1);
             setupQRCode('qr2', params.sig2 || params.name2);
             setupQRCode('qr3', params.sig3 || params.name3);
             setupQRCode('qr4', params.sig4 || params.name4);
             setupQRCode('qr5', params.sig5 || params.name5);
-
             // Setup all name displays
             setupNameDisplay('name1', params.name1, params.sig1);
             setupNameDisplay('name2', params.name2, params.sig2);
             setupNameDisplay('name3', params.name3, params.sig3);
             setupNameDisplay('name4', params.name4, params.sig4);
             setupNameDisplay('name5', params.name5, params.sig5);
-
             // Function to extract URL from AppSheet format
             function extractUrlFromAppSheetFormat(urlData) {
                 if (!urlData) return '';
@@ -753,7 +674,6 @@
                     return urlData;
                 }
             }
-
             // Function to handle image loading
             function setupImage(imageId, imageUrl) {
                 if (!imageUrl) return;
@@ -788,13 +708,11 @@
                     imgElement.src = actualUrl;
                 }
             }
-
             // Setup all images
             setupImage('image1', params.image1);
             setupImage('image2', params.image2);
             setupImage('image3', params.image3);
             setupImage('image4', params.image4);
-
             // Update text data
             const dataElements = document.querySelectorAll('.attr-display');
             const paramKeys = ['noOK', 'department', 'nama', 'namaKerja', 'jenisKerja', 'waktuKerja', 'rincianKerja', 'koreksi', 'rootCause', 'correctiveAction', 'targetSelesai', 'actualSelesai', 'status'];
@@ -818,122 +736,116 @@
             });
         })();
 
-        // PDF Export Function
+        // PDF Export Function with proper implementation
         async function exportToPDF() {
-            const { jsPDF } = window.jspdf;
-            const loadingOverlay = document.getElementById('loadingOverlay');
-            const exportBtn = document.getElementById('exportPdfBtn');
+            const pdfBtn = document.getElementById('pdfBtn');
+            const originalText = pdfBtn.textContent;
             
             try {
-                // Show loading overlay
-                loadingOverlay.style.display = 'flex';
-                exportBtn.disabled = true;
-                exportBtn.textContent = 'Generating PDF...';
+                // Disable button and show loading
+                pdfBtn.disabled = true;
+                pdfBtn.textContent = 'Generating PDF...';
                 
-                // Create new jsPDF instance
-                const pdf = new jsPDF({
-                    orientation: 'portrait',
-                    unit: 'mm',
-                    format: 'a4'
-                });
+                // Check if jsPDF is loaded
+                if (typeof window.jsPDF === 'undefined') {
+                    throw new Error('jsPDF library not loaded');
+                }
+                
+                const { jsPDF } = window.jsPDF;
+                const pdf = new jsPDF('p', 'mm', 'a4');
                 
                 // Get the print area
                 const printArea = document.getElementById('printArea');
+                if (!printArea) {
+                    throw new Error('Print area not found');
+                }
                 
-                // Temporarily modify styles for better PDF rendering
-                const originalStyle = printArea.style.cssText;
-                printArea.style.width = '210mm';
-                printArea.style.maxWidth = '210mm';
-                printArea.style.backgroundColor = 'white';
-                printArea.style.padding = '5mm';
-                
-                // Hide buttons and loading overlay temporarily
+                // Temporarily hide buttons for clean capture
                 const buttons = document.querySelector('.buttons');
-                const originalButtonsDisplay = buttons.style.display;
+                const originalButtonDisplay = buttons.style.display;
                 buttons.style.display = 'none';
-                loadingOverlay.style.display = 'none';
+                
+                // Apply print styles temporarily
+                document.body.style.backgroundColor = 'white';
+                const container = document.querySelector('.container');
+                container.style.boxShadow = 'none';
+                container.style.maxWidth = 'none';
+                container.style.margin = '0';
+                container.style.padding = '0';
                 
                 // Wait for images to load
-                await waitForImages();
+                await waitForImagesToLoad();
                 
-                // Capture the entire form as image
-                const canvas = await html2canvas(printArea, {
-                    scale: 2,
-                    useCORS: true,
-                    allowTaint: true,
-                    backgroundColor: '#ffffff',
-                    width: printArea.scrollWidth,
-                    height: printArea.scrollHeight,
-                    scrollX: 0,
-                    scrollY: 0
-                });
+                // Get all page sections
+                const pages = [
+                    printArea.querySelector('.table-title').parentElement.querySelector('table').parentElement,
+                    printArea.querySelector('.page-break:nth-of-type(1)'),
+                    printArea.querySelector('.page-break:nth-of-type(2)')
+                ];
                 
-                // Calculate dimensions for PDF
-                const imgWidth = 210; // A4 width in mm
-                const pageHeight = 297; // A4 height in mm
-                const imgHeight = (canvas.height * imgWidth) / canvas.width;
-                
-                // If content fits in one page
-                if (imgHeight <= pageHeight) {
-                    pdf.addImage(canvas.toDataURL('image/jpeg', 0.8), 'JPEG', 0, 0, imgWidth, imgHeight);
-                } else {
-                    // Split into multiple pages
-                    let heightLeft = imgHeight;
-                    let position = 0;
-                    let pageNumber = 1;
-                    
-                    // First page
-                    pdf.addImage(canvas.toDataURL('image/jpeg', 0.8), 'JPEG', 0, position, imgWidth, imgHeight);
-                    heightLeft -= pageHeight;
-                    
-                    // Additional pages
-                    while (heightLeft >= 0) {
-                        position = heightLeft - imgHeight;
-                        pdf.addPage();
-                        pdf.addImage(canvas.toDataURL('image/jpeg', 0.8), 'JPEG', 0, position, imgWidth, imgHeight);
-                        heightLeft -= pageHeight;
-                        pageNumber++;
+                for (let i = 0; i < pages.length; i++) {
+                    if (pages[i]) {
+                        const canvas = await html2canvas(pages[i], {
+                            scale: 2,
+                            useCORS: true,
+                            allowTaint: true,
+                            backgroundColor: '#ffffff',
+                            width: pages[i].scrollWidth,
+                            height: pages[i].scrollHeight
+                        });
+                        
+                        const imgData = canvas.toDataURL('image/png');
+                        const imgWidth = 190; // A4 width minus margins
+                        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                        
+                        if (i > 0) {
+                            pdf.addPage();
+                        }
+                        
+                        pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight);
                     }
                 }
                 
-                // Generate filename with timestamp
-                const now = new Date();
-                const timestamp = now.toISOString().slice(0, 19).replace(/:/g, '-');
-                const filename = `Form_Order_Kerja_${timestamp}.pdf`;
+                // Generate filename with current date and work order number
+                const noOK = getParamValue('noOK');
+                const currentDate = new Date().toISOString().split('T')[0];
+                const filename = `Form_Order_Kerja_${noOK !== '-' ? noOK : currentDate}.pdf`;
                 
                 // Save the PDF
                 pdf.save(filename);
                 
                 // Restore original styles
-                printArea.style.cssText = originalStyle;
-                buttons.style.display = originalButtonsDisplay;
+                buttons.style.display = originalButtonDisplay;
+                document.body.style.backgroundColor = '#f5f5f5';
+                container.style.boxShadow = '0 2px 10px rgba(0,0,0,0.1)';
+                container.style.maxWidth = '1200px';
+                container.style.margin = '0 auto';
+                container.style.padding = '10px';
                 
             } catch (error) {
-                console.error('Error generating PDF:', error);
-                alert('Error saat menggenerate PDF. Silakan coba lagi atau gunakan Print.');
+                console.error('PDF Export Error:', error);
+                alert('Gagal mengexport PDF: ' + error.message + '\nSilakan gunakan Print untuk sementara.');
             } finally {
-                // Hide loading overlay and restore button
-                loadingOverlay.style.display = 'none';
-                exportBtn.disabled = false;
-                exportBtn.textContent = 'Export PDF';
+                // Restore button
+                pdfBtn.disabled = false;
+                pdfBtn.textContent = originalText;
             }
         }
         
-        // Helper function to wait for all images to load
-        function waitForImages() {
+        // Helper function to wait for images to load
+        function waitForImagesToLoad() {
             return new Promise((resolve) => {
                 const images = document.querySelectorAll('img');
                 let loadedCount = 0;
-                let totalImages = images.length;
                 
-                if (totalImages === 0) {
+                if (images.length === 0) {
                     resolve();
                     return;
                 }
                 
                 const checkAllLoaded = () => {
                     loadedCount++;
-                    if (loadedCount === totalImages) {
+                    if (loadedCount === images.length) {
                         resolve();
                     }
                 };
@@ -942,14 +854,20 @@
                     if (img.complete) {
                         checkAllLoaded();
                     } else {
-                        img.onload = checkAllLoaded;
-                        img.onerror = checkAllLoaded;
-                        
-                        // Timeout fallback
-                        setTimeout(checkAllLoaded, 3000);
+                        img.addEventListener('load', checkAllLoaded);
+                        img.addEventListener('error', checkAllLoaded);
                     }
                 });
+                
+                // Fallback timeout
+                setTimeout(resolve, 3000);
             });
+        }
+        
+        // Helper function to get parameter value
+        function getParamValue(paramName) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(paramName) || '-';
         }
 
         // AppSheet Integration Helper Functions
@@ -987,3 +905,6 @@
                 };
             }
         };
+    </script>
+</body>
+</html>
