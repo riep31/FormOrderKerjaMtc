@@ -290,6 +290,15 @@
                 size: A4;
                 margin: 5mm;
             }
+            
+            .pdf-export-mode {
+                background: white !important;
+            }
+            
+            .pdf-export-mode .container {
+                box-shadow: none !important;
+                background: white !important;
+            }
         }
     </style>
 </head>
@@ -525,12 +534,15 @@
         <div class="buttons">
             <button class="btn" onclick="window.print()">Print Form</button>
             <button class="btn btn-success" onclick="exportToPDF()" id="pdfBtn">Export PDF</button>
+            <button class="btn" onclick="exportToPDFAlternative()" style="background-color: #6c757d;">Export PDF (Alternative)</button>
         </div>
     </div>
     
-    <!-- jsPDF and html2canvas Libraries -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- Alternative: Use browser's built-in PDF generation -->
+    <script>
+        // Check if we're in a modern browser that supports print to PDF
+        const supportsPrintToPDF = 'onbeforeprint' in window;
+    </script>
     
     <script>
         (function() {
@@ -736,164 +748,130 @@
             });
         })();
 
-        // PDF Export Function with proper implementation
-        async function exportToPDF() {
+        // Simple and Reliable PDF Export Function
+        function exportToPDF() {
             const pdfBtn = document.getElementById('pdfBtn');
             const originalText = pdfBtn.textContent;
             
-            try {
-                // Disable button and show loading
-                pdfBtn.disabled = true;
+            // Method 1: Try using browser's native PDF generation
+            if (window.chrome || window.navigator.userAgent.includes('Chrome')) {
+                // For Chrome/Chromium browsers
                 pdfBtn.textContent = 'Generating PDF...';
+                pdfBtn.disabled = true;
                 
-                // Wait for libraries to load
-                await waitForLibraries();
-                
-                // Check if libraries are available
-                if (!window.jsPDF && !window.html2canvas) {
-                    throw new Error('PDF libraries tidak dapat dimuat');
-                }
-                
-                // Use the correct jsPDF constructor
-                const { jsPDF } = window.jsPDF || window;
-                const pdf = new (jsPDF || window.jsPDF)();
-                
-                // Get the print area
-                const printArea = document.getElementById('printArea');
-                if (!printArea) {
-                    throw new Error('Print area tidak ditemukan');
-                }
-                
-                // Temporarily hide buttons for clean capture
+                // Hide buttons for clean print
                 const buttons = document.querySelector('.buttons');
-                const originalButtonDisplay = buttons.style.display;
                 buttons.style.display = 'none';
                 
-                // Apply print styles temporarily
-                document.body.style.backgroundColor = 'white';
-                const container = document.querySelector('.container');
-                const originalStyles = {
-                    boxShadow: container.style.boxShadow,
-                    maxWidth: container.style.maxWidth,
-                    margin: container.style.margin,
-                    padding: container.style.padding
-                };
+                // Apply print styles
+                document.body.classList.add('pdf-export-mode');
                 
-                container.style.boxShadow = 'none';
-                container.style.maxWidth = 'none';
-                container.style.margin = '0';
-                container.style.padding = '0';
-                
-                // Wait for images to load
-                await waitForImagesToLoad();
-                
-                // Create canvas of the entire print area
-                const canvas = await html2canvas(printArea, {
-                    scale: 1.5,
-                    useCORS: true,
-                    allowTaint: true,
-                    backgroundColor: '#ffffff',
-                    width: printArea.scrollWidth,
-                    height: printArea.scrollHeight,
-                    onclone: function(clonedDoc) {
-                        // Ensure styles are applied to cloned document
-                        const clonedContainer = clonedDoc.querySelector('.container');
-                        if (clonedContainer) {
-                            clonedContainer.style.backgroundColor = 'white';
-                            clonedContainer.style.boxShadow = 'none';
-                        }
-                    }
-                });
-                
-                // Calculate dimensions for A4
-                const imgWidth = 190; // A4 width minus margins (210mm - 20mm margins)
-                const imgHeight = (canvas.height * imgWidth) / canvas.width;
-                const pageHeight = 277; // A4 height minus margins (297mm - 20mm margins)
-                
-                // Add image to PDF, splitting into pages if necessary
-                let position = 0;
-                let pageNumber = 0;
-                
-                while (position < imgHeight) {
-                    if (pageNumber > 0) {
-                        pdf.addPage();
-                    }
-                    
-                    // Calculate the portion of image for this page
-                    const remainingHeight = imgHeight - position;
-                    const currentPageHeight = Math.min(pageHeight, remainingHeight);
-                    
-                    // Create a temporary canvas for this page portion
-                    const pageCanvas = document.createElement('canvas');
-                    const pageCtx = pageCanvas.getContext('2d');
-                    const scaleFactor = canvas.width / imgWidth;
-                    
-                    pageCanvas.width = canvas.width;
-                    pageCanvas.height = currentPageHeight * scaleFactor;
-                    
-                    pageCtx.drawImage(
-                        canvas,
-                        0, position * scaleFactor,
-                        canvas.width, currentPageHeight * scaleFactor,
-                        0, 0,
-                        canvas.width, currentPageHeight * scaleFactor
+                // Trigger print dialog with a hint to save as PDF
+                setTimeout(() => {
+                    // Show instruction modal
+                    const instruction = confirm(
+                        'Untuk menyimpan sebagai PDF:\n\n' +
+                        '1. Klik "Print" pada dialog yang akan muncul\n' +
+                        '2. Pilih "Save as PDF" atau "Microsoft Print to PDF"\n' +
+                        '3. Klik "Save" dan pilih lokasi file\n\n' +
+                        'Klik OK untuk melanjutkan...'
                     );
                     
-                    const pageImgData = pageCanvas.toDataURL('image/png');
-                    pdf.addImage(pageImgData, 'PNG', 10, 10, imgWidth, currentPageHeight);
+                    if (instruction) {
+                        // Create print-friendly version
+                        window.print();
+                    }
                     
-                    position += currentPageHeight;
-                    pageNumber++;
-                }
+                    // Restore UI after print dialog
+                    setTimeout(() => {
+                        buttons.style.display = 'block';
+                        pdfBtn.disabled = false;
+                        pdfBtn.textContent = originalText;
+                        document.body.classList.remove('pdf-export-mode');
+                    }, 1000);
+                    
+                }, 100);
                 
-                // Generate filename with current date and work order number
-                const noOK = getParamValue('noOK');
-                const currentDate = new Date().toISOString().split('T')[0];
-                const filename = `Form_Order_Kerja_${noOK !== '-' ? noOK : currentDate}.pdf`;
-                
-                // Save the PDF
-                pdf.save(filename);
-                
-                // Restore original styles
-                buttons.style.display = originalButtonDisplay;
-                document.body.style.backgroundColor = '#f5f5f5';
-                container.style.boxShadow = originalStyles.boxShadow;
-                container.style.maxWidth = originalStyles.maxWidth;
-                container.style.margin = originalStyles.margin;
-                container.style.padding = originalStyles.padding;
-                
-                alert('PDF berhasil didownload!');
-                
-            } catch (error) {
-                console.error('PDF Export Error:', error);
-                alert('Gagal mengexport PDF: ' + error.message + '\nSilakan gunakan Print untuk sementara.');
-            } finally {
-                // Restore button
-                pdfBtn.disabled = false;
-                pdfBtn.textContent = originalText;
+            } else {
+                // For other browsers, fallback to simple print
+                alert(
+                    'Untuk mengexport PDF:\n\n' +
+                    '1. Gunakan browser Chrome/Edge untuk hasil terbaik\n' +
+                    '2. Atau gunakan "Print Form" lalu pilih "Save as PDF"\n\n' +
+                    'Klik OK untuk membuka Print...'
+                );
+                window.print();
             }
         }
         
-        // Wait for libraries to load
-        function waitForLibraries() {
-            return new Promise((resolve) => {
-                let attempts = 0;
-                const maxAttempts = 50; // 5 seconds
+        // Alternative PDF export using data URL (fallback)
+        function exportToPDFAlternative() {
+            try {
+                // Create a new window with print-optimized content
+                const printWindow = window.open('', '_blank');
+                const printContent = document.getElementById('printArea').cloneNode(true);
                 
-                const checkLibraries = () => {
-                    attempts++;
-                    
-                    if ((window.jsPDF || window.jspdf) && window.html2canvas) {
-                        resolve();
-                    } else if (attempts < maxAttempts) {
-                        setTimeout(checkLibraries, 100);
-                    } else {
-                        resolve(); // Continue anyway, let the main function handle the error
-                    }
-                };
+                // Create complete HTML document
+                const htmlContent = `
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <title>Form Order Kerja - PT. DAGSAP ENDURA EATORE</title>
+                        <style>
+                            ${document.querySelector('style').textContent}
+                            
+                            body { 
+                                background: white !important; 
+                                font-family: Arial, sans-serif;
+                                margin: 0;
+                                padding: 20px;
+                            }
+                            .container {
+                                box-shadow: none !important;
+                                max-width: none !important;
+                                margin: 0 !important;
+                                padding: 0 !important;
+                                background: white !important;
+                            }
+                            .buttons { display: none !important; }
+                            
+                            @media print {
+                                @page { 
+                                    size: A4; 
+                                    margin: 10mm; 
+                                }
+                                body { 
+                                    background: white !important; 
+                                    -webkit-print-color-adjust: exact;
+                                    color-adjust: exact;
+                                }
+                            }
+                        </style>
+                    </head>
+                    <body>
+                        ${printContent.outerHTML}
+                        <script>
+                            window.onload = function() {
+                                setTimeout(function() {
+                                    window.print();
+                                    setTimeout(function() {
+                                        window.close();
+                                    }, 100);
+                                }, 500);
+                            }
+                        </script>
+                    </body>
+                    </html>
+                `;
                 
-                checkLibraries();
-            });
+                printWindow.document.write(htmlContent);
+                printWindow.document.close();
+                
+            } catch (error) {
+                console.error('Alternative PDF export failed:', error);
+                alert('Gagal membuka window baru. Silakan gunakan Print Form.');
+                window.print();
+            }
         }
         
         // Helper function to wait for images to load
