@@ -528,9 +528,9 @@
         </div>
     </div>
     
-    <!-- jsPDF Library -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- jsPDF and html2canvas Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     
     <script>
         (function() {
@@ -746,18 +746,22 @@
                 pdfBtn.disabled = true;
                 pdfBtn.textContent = 'Generating PDF...';
                 
-                // Check if jsPDF is loaded
-                if (typeof window.jsPDF === 'undefined') {
-                    throw new Error('jsPDF library not loaded');
+                // Wait for libraries to load
+                await waitForLibraries();
+                
+                // Check if libraries are available
+                if (!window.jsPDF && !window.html2canvas) {
+                    throw new Error('PDF libraries tidak dapat dimuat');
                 }
                 
-                const { jsPDF } = window.jsPDF;
-                const pdf = new jsPDF('p', 'mm', 'a4');
+                // Use the correct jsPDF constructor
+                const { jsPDF } = window.jsPDF || window;
+                const pdf = new (jsPDF || window.jsPDF)();
                 
                 // Get the print area
                 const printArea = document.getElementById('printArea');
                 if (!printArea) {
-                    throw new Error('Print area not found');
+                    throw new Error('Print area tidak ditemukan');
                 }
                 
                 // Temporarily hide buttons for clean capture
@@ -768,6 +772,13 @@
                 // Apply print styles temporarily
                 document.body.style.backgroundColor = 'white';
                 const container = document.querySelector('.container');
+                const originalStyles = {
+                    boxShadow: container.style.boxShadow,
+                    maxWidth: container.style.maxWidth,
+                    margin: container.style.margin,
+                    padding: container.style.padding
+                };
+                
                 container.style.boxShadow = 'none';
                 container.style.maxWidth = 'none';
                 container.style.margin = '0';
@@ -776,34 +787,63 @@
                 // Wait for images to load
                 await waitForImagesToLoad();
                 
-                // Get all page sections
-                const pages = [
-                    printArea.querySelector('.table-title').parentElement.querySelector('table').parentElement,
-                    printArea.querySelector('.page-break:nth-of-type(1)'),
-                    printArea.querySelector('.page-break:nth-of-type(2)')
-                ];
-                
-                for (let i = 0; i < pages.length; i++) {
-                    if (pages[i]) {
-                        const canvas = await html2canvas(pages[i], {
-                            scale: 2,
-                            useCORS: true,
-                            allowTaint: true,
-                            backgroundColor: '#ffffff',
-                            width: pages[i].scrollWidth,
-                            height: pages[i].scrollHeight
-                        });
-                        
-                        const imgData = canvas.toDataURL('image/png');
-                        const imgWidth = 190; // A4 width minus margins
-                        const imgHeight = (canvas.height * imgWidth) / canvas.width;
-                        
-                        if (i > 0) {
-                            pdf.addPage();
+                // Create canvas of the entire print area
+                const canvas = await html2canvas(printArea, {
+                    scale: 1.5,
+                    useCORS: true,
+                    allowTaint: true,
+                    backgroundColor: '#ffffff',
+                    width: printArea.scrollWidth,
+                    height: printArea.scrollHeight,
+                    onclone: function(clonedDoc) {
+                        // Ensure styles are applied to cloned document
+                        const clonedContainer = clonedDoc.querySelector('.container');
+                        if (clonedContainer) {
+                            clonedContainer.style.backgroundColor = 'white';
+                            clonedContainer.style.boxShadow = 'none';
                         }
-                        
-                        pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight);
                     }
+                });
+                
+                // Calculate dimensions for A4
+                const imgWidth = 190; // A4 width minus margins (210mm - 20mm margins)
+                const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                const pageHeight = 277; // A4 height minus margins (297mm - 20mm margins)
+                
+                // Add image to PDF, splitting into pages if necessary
+                let position = 0;
+                let pageNumber = 0;
+                
+                while (position < imgHeight) {
+                    if (pageNumber > 0) {
+                        pdf.addPage();
+                    }
+                    
+                    // Calculate the portion of image for this page
+                    const remainingHeight = imgHeight - position;
+                    const currentPageHeight = Math.min(pageHeight, remainingHeight);
+                    
+                    // Create a temporary canvas for this page portion
+                    const pageCanvas = document.createElement('canvas');
+                    const pageCtx = pageCanvas.getContext('2d');
+                    const scaleFactor = canvas.width / imgWidth;
+                    
+                    pageCanvas.width = canvas.width;
+                    pageCanvas.height = currentPageHeight * scaleFactor;
+                    
+                    pageCtx.drawImage(
+                        canvas,
+                        0, position * scaleFactor,
+                        canvas.width, currentPageHeight * scaleFactor,
+                        0, 0,
+                        canvas.width, currentPageHeight * scaleFactor
+                    );
+                    
+                    const pageImgData = pageCanvas.toDataURL('image/png');
+                    pdf.addImage(pageImgData, 'PNG', 10, 10, imgWidth, currentPageHeight);
+                    
+                    position += currentPageHeight;
+                    pageNumber++;
                 }
                 
                 // Generate filename with current date and work order number
@@ -817,10 +857,12 @@
                 // Restore original styles
                 buttons.style.display = originalButtonDisplay;
                 document.body.style.backgroundColor = '#f5f5f5';
-                container.style.boxShadow = '0 2px 10px rgba(0,0,0,0.1)';
-                container.style.maxWidth = '1200px';
-                container.style.margin = '0 auto';
-                container.style.padding = '10px';
+                container.style.boxShadow = originalStyles.boxShadow;
+                container.style.maxWidth = originalStyles.maxWidth;
+                container.style.margin = originalStyles.margin;
+                container.style.padding = originalStyles.padding;
+                
+                alert('PDF berhasil didownload!');
                 
             } catch (error) {
                 console.error('PDF Export Error:', error);
@@ -830,6 +872,28 @@
                 pdfBtn.disabled = false;
                 pdfBtn.textContent = originalText;
             }
+        }
+        
+        // Wait for libraries to load
+        function waitForLibraries() {
+            return new Promise((resolve) => {
+                let attempts = 0;
+                const maxAttempts = 50; // 5 seconds
+                
+                const checkLibraries = () => {
+                    attempts++;
+                    
+                    if ((window.jsPDF || window.jspdf) && window.html2canvas) {
+                        resolve();
+                    } else if (attempts < maxAttempts) {
+                        setTimeout(checkLibraries, 100);
+                    } else {
+                        resolve(); // Continue anyway, let the main function handle the error
+                    }
+                };
+                
+                checkLibraries();
+            });
         }
         
         // Helper function to wait for images to load
