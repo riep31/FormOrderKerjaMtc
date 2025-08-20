@@ -818,141 +818,104 @@
             });
         })();
 
-        // PDF Export Function - Working implementation
+        // PDF Export Function
         async function exportToPDF() {
-            // Check if libraries are loaded
-            if (!window.jspdf || !window.html2canvas) {
-                alert('Library PDF belum sepenuhnya dimuat. Silakan tunggu beberapa detik dan coba lagi.');
-                return;
-            }
-
+            const { jsPDF } = window.jspdf;
             const loadingOverlay = document.getElementById('loadingOverlay');
             const exportBtn = document.getElementById('exportPdfBtn');
             
             try {
-                // Show loading state
-                if (loadingOverlay) loadingOverlay.style.display = 'flex';
+                // Show loading overlay
+                loadingOverlay.style.display = 'flex';
                 exportBtn.disabled = true;
                 exportBtn.textContent = 'Generating PDF...';
                 
-                // Wait a bit for UI update
-                await new Promise(resolve => setTimeout(resolve, 100));
+                // Create new jsPDF instance
+                const pdf = new jsPDF({
+                    orientation: 'portrait',
+                    unit: 'mm',
+                    format: 'a4'
+                });
                 
                 // Get the print area
                 const printArea = document.getElementById('printArea');
-                if (!printArea) {
-                    throw new Error('Print area not found');
-                }
                 
-                // Hide buttons temporarily
+                // Temporarily modify styles for better PDF rendering
+                const originalStyle = printArea.style.cssText;
+                printArea.style.width = '210mm';
+                printArea.style.maxWidth = '210mm';
+                printArea.style.backgroundColor = 'white';
+                printArea.style.padding = '5mm';
+                
+                // Hide buttons and loading overlay temporarily
                 const buttons = document.querySelector('.buttons');
-                const originalButtonsDisplay = buttons ? buttons.style.display : '';
-                if (buttons) buttons.style.display = 'none';
-                
-                // Hide loading overlay from capture
-                if (loadingOverlay) loadingOverlay.style.display = 'none';
+                const originalButtonsDisplay = buttons.style.display;
+                buttons.style.display = 'none';
+                loadingOverlay.style.display = 'none';
                 
                 // Wait for images to load
                 await waitForImages();
                 
-                console.log('Starting canvas capture...');
-                
-                // Capture the form as image with better options
+                // Capture the entire form as image
                 const canvas = await html2canvas(printArea, {
-                    scale: 1.5,
+                    scale: 2,
                     useCORS: true,
                     allowTaint: true,
                     backgroundColor: '#ffffff',
-                    logging: false,
-                    removeContainer: false,
-                    imageTimeout: 0,
-                    foreignObjectRendering: true
+                    width: printArea.scrollWidth,
+                    height: printArea.scrollHeight,
+                    scrollX: 0,
+                    scrollY: 0
                 });
                 
-                console.log('Canvas captured, creating PDF...');
-                
-                // Create PDF
-                const { jsPDF } = window.jspdf;
-                const pdf = new jsPDF('p', 'mm', 'a4');
-                
-                // Calculate dimensions
-                const pageWidth = 210; // A4 width in mm
+                // Calculate dimensions for PDF
+                const imgWidth = 210; // A4 width in mm
                 const pageHeight = 297; // A4 height in mm
-                const margin = 10;
-                const imgWidth = pageWidth - (margin * 2);
                 const imgHeight = (canvas.height * imgWidth) / canvas.width;
                 
-                // Add image to PDF
-                const imgData = canvas.toDataURL('image/jpeg', 0.85);
-                
-                if (imgHeight <= pageHeight - (margin * 2)) {
-                    // Single page
-                    pdf.addImage(imgData, 'JPEG', margin, margin, imgWidth, imgHeight);
+                // If content fits in one page
+                if (imgHeight <= pageHeight) {
+                    pdf.addImage(canvas.toDataURL('image/jpeg', 0.8), 'JPEG', 0, 0, imgWidth, imgHeight);
                 } else {
-                    // Multiple pages
-                    let yPosition = margin;
-                    let remainingHeight = imgHeight;
+                    // Split into multiple pages
+                    let heightLeft = imgHeight;
+                    let position = 0;
                     let pageNumber = 1;
                     
-                    while (remainingHeight > 0) {
-                        const currentPageHeight = Math.min(remainingHeight, pageHeight - (margin * 2));
-                        
-                        if (pageNumber > 1) {
-                            pdf.addPage();
-                        }
-                        
-                        // Calculate source rectangle for this page
-                        const sourceY = (imgHeight - remainingHeight) * (canvas.height / imgHeight);
-                        const sourceHeight = currentPageHeight * (canvas.height / imgHeight);
-                        
-                        // Create a temporary canvas for this page section
-                        const tempCanvas = document.createElement('canvas');
-                        tempCanvas.width = canvas.width;
-                        tempCanvas.height = sourceHeight;
-                        const tempCtx = tempCanvas.getContext('2d');
-                        
-                        tempCtx.drawImage(canvas, 0, sourceY, canvas.width, sourceHeight, 0, 0, canvas.width, sourceHeight);
-                        
-                        const tempImgData = tempCanvas.toDataURL('image/jpeg', 0.85);
-                        pdf.addImage(tempImgData, 'JPEG', margin, margin, imgWidth, currentPageHeight);
-                        
-                        remainingHeight -= currentPageHeight;
+                    // First page
+                    pdf.addImage(canvas.toDataURL('image/jpeg', 0.8), 'JPEG', 0, position, imgWidth, imgHeight);
+                    heightLeft -= pageHeight;
+                    
+                    // Additional pages
+                    while (heightLeft >= 0) {
+                        position = heightLeft - imgHeight;
+                        pdf.addPage();
+                        pdf.addImage(canvas.toDataURL('image/jpeg', 0.8), 'JPEG', 0, position, imgWidth, imgHeight);
+                        heightLeft -= pageHeight;
                         pageNumber++;
                     }
                 }
                 
-                // Generate filename with current data
-                const urlParams = new URLSearchParams(window.location.search);
-                const noOK = urlParams.get('noOK') || 'Unknown';
+                // Generate filename with timestamp
                 const now = new Date();
-                const dateStr = now.toISOString().slice(0, 10);
-                const timeStr = now.toTimeString().slice(0, 8).replace(/:/g, '-');
-                const filename = `Form_OK_${noOK}_${dateStr}_${timeStr}.pdf`;
-                
-                console.log('Saving PDF...');
+                const timestamp = now.toISOString().slice(0, 19).replace(/:/g, '-');
+                const filename = `Form_Order_Kerja_${timestamp}.pdf`;
                 
                 // Save the PDF
                 pdf.save(filename);
                 
-                console.log('PDF saved successfully');
-                
-                // Restore buttons display
-                if (buttons) buttons.style.display = originalButtonsDisplay;
+                // Restore original styles
+                printArea.style.cssText = originalStyle;
+                buttons.style.display = originalButtonsDisplay;
                 
             } catch (error) {
-                console.error('PDF Export Error:', error);
-                alert(`Error saat menggenerate PDF: ${error.message}. Silakan coba lagi atau gunakan Print.`);
+                console.error('Error generating PDF:', error);
+                alert('Error saat menggenerate PDF. Silakan coba lagi atau gunakan Print.');
             } finally {
-                // Always restore UI state
-                if (loadingOverlay) loadingOverlay.style.display = 'none';
+                // Hide loading overlay and restore button
+                loadingOverlay.style.display = 'none';
                 exportBtn.disabled = false;
                 exportBtn.textContent = 'Export PDF';
-                
-                // Restore buttons
-                const buttons = document.querySelector('.buttons');
-                if (buttons && buttons.style.display === 'none') {
-                    buttons.style.display = '';
-                }
             }
         }
         
@@ -961,52 +924,31 @@
             return new Promise((resolve) => {
                 const images = document.querySelectorAll('img');
                 let loadedCount = 0;
-                const totalImages = images.length;
+                let totalImages = images.length;
                 
                 if (totalImages === 0) {
-                    console.log('No images to wait for');
                     resolve();
                     return;
                 }
                 
-                console.log(`Waiting for ${totalImages} images to load...`);
-                
                 const checkAllLoaded = () => {
                     loadedCount++;
-                    console.log(`Image loaded: ${loadedCount}/${totalImages}`);
-                    if (loadedCount >= totalImages) {
-                        console.log('All images loaded');
+                    if (loadedCount === totalImages) {
                         resolve();
                     }
                 };
                 
-                images.forEach((img, index) => {
-                    if (img.complete && img.naturalHeight > 0) {
+                images.forEach(img => {
+                    if (img.complete) {
                         checkAllLoaded();
                     } else {
-                        const timeout = setTimeout(() => {
-                            console.log(`Image ${index} timeout, continuing anyway`);
-                            checkAllLoaded();
-                        }, 5000);
+                        img.onload = checkAllLoaded;
+                        img.onerror = checkAllLoaded;
                         
-                        img.onload = () => {
-                            clearTimeout(timeout);
-                            checkAllLoaded();
-                        };
-                        
-                        img.onerror = () => {
-                            clearTimeout(timeout);
-                            console.log(`Image ${index} failed to load, continuing anyway`);
-                            checkAllLoaded();
-                        };
+                        // Timeout fallback
+                        setTimeout(checkAllLoaded, 3000);
                     }
                 });
-                
-                // Fallback timeout
-                setTimeout(() => {
-                    console.log('Image loading timeout, proceeding with PDF generation');
-                    resolve();
-                }, 10000);
             });
         }
 
